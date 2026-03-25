@@ -10,6 +10,7 @@ import blogsRoutes from "./routes/blogs.routes.js";
 import chatsRoutes from "./routes/chat.routes.js";
 import { app, server } from "./lib/socket.js";
 import path from "path";
+import { allowedOrigins } from "./config/cors.js";
 
 const port = process.env.PORT || 5001;
 
@@ -20,16 +21,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const allowedOrigins = [
-    process.env.CLIENT_URL,
-    process.env.FRONTEND_URL,
-    "https://blog-frontend-zeta-lilac.vercel.app",
-    "http://localhost:5173",
-    "http://localhost:5175",
-].filter(Boolean);
-
 app.use(cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+        console.log(`🌐 CORS Request from origin: ${origin}`);
+        
+        // Allow requests with no origin (like mobile apps, Postman, etc.)
+        if (!origin) {
+            console.log('✅ Allowing request with no origin');
+            return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
+        if (allowedOrigins.includes(origin)) {
+            console.log('✅ Origin is in allowedOrigins list');
+            return callback(null, true);
+        }
+        
+        // Allow all Vercel preview deployments (*.vercel.app)
+        if (origin.endsWith('.vercel.app')) {
+            console.log('✅ Allowing Vercel deployment domain');
+            return callback(null, true);
+        }
+        
+        // Reject other origins
+        console.log('❌ Origin rejected by CORS policy');
+        const msg = `The CORS policy for this site does not allow access from origin ${origin}`;
+        return callback(new Error(msg), false);
+    },
     credentials: true
 }));
 
