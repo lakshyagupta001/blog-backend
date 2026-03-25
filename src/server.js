@@ -19,8 +19,16 @@ const __dirname = path.resolve();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    process.env.FRONTEND_URL,
+    "http://localhost:5173",
+    "http://localhost:5175",
+].filter(Boolean);
+
 app.use(cors({
-    origin: 'http://localhost:5175' || process.env.CLIENT_URL || 'https://blogify-d0ba.onrender.com',
+    origin: allowedOrigins,
     credentials: true
 }));
 
