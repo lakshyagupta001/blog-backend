@@ -2,6 +2,19 @@ import User from "../models/user.model.js";
 import BlackListToken from "../models/blacklistToken.model.js"
 import jwt from "jsonwebtoken";
 
+const cookieOptions = {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
+};
+
+const clearCookieOptions = {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
+};
+
 export const signup = async (req, res) => {
     const { fullName, email, password } = req.body;
     try {
@@ -33,12 +46,7 @@ export const signup = async (req, res) => {
         await newUser.save();
 
         const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECRET_KEY, { expiresIn: "7d" });
-        res.cookie("token", token, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            httpOnly: true,
-            sameSites: "strict",
-            secure: process.env.NODE_ENV === 'production'
-        });
+        res.cookie("token", token, cookieOptions);
 
         res.status(200).json({ success: true, user: newUser });
     } catch (error) {
@@ -66,12 +74,7 @@ export const login = async (req, res) => {
 
         const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "7d" });
 
-        res.cookie("token", token, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            httpOnly: true,
-            sameSites: "strict",
-            secure: process.env.NODE_ENV === 'production'
-        });
+        res.cookie("token", token, cookieOptions);
 
         res.status(200).json({ success: true, user });
 
@@ -117,11 +120,7 @@ export const logout = async (req, res) => {
 
     await BlackListToken.create({ token });
 
-    res.clearCookie("token", {
-        httpOnly: true,
-        sameSites: "strict",
-        secure: process.env.NODE_ENV === 'production'
-    });
+    res.clearCookie("token", clearCookieOptions);
 
     res.status(200).json({ success: true, message: "Logged out Successfully" });
 }
